@@ -1,31 +1,33 @@
-local currentVersion = "1.0.0" -- Nastavte aktuální verzi skriptu
-local githubRepo = "user/repo" -- Zde nahraďte "user/repo" za uživatelské jméno a název repozitáře na GitHubu
-local checkInterval = 3600 -- Interval v sekundách pro kontrolu aktualizace (v tomto příkladu 1 hodina)
+-- Název resource, který chceme kontrolovat
+local resourceToCheck = "vxrp_multipack"
 
-local function CheckForUpdate()
-    local resourceName = GetCurrentResourceName()
-    local url = "https://api.github.com/repos/" .. githubRepo .. "/releases/latest"
+-- Funkce pro kontrolu aktualizace resource podle GitHubu
+function CheckResourceUpdates()
+    local resourceName = resourceToCheck
+    local fxManifestUrl = "https://raw.githubusercontent.com/VojtaNN/"..resourceName.."/main/fxmanifest.lua" -- Zde nahraď "TVOJ_GITHUB_REPOSITORY" názvem tvého GitHub účtu/repozitáře
 
-    PerformHttpRequest(url, function(statusCode, data, headers)
-        if statusCode == 200 then
-            local release = json.decode(data)
-            local latestVersion = release.tag_name
+    PerformHttpRequest(fxManifestUrl, function(statusCode, response, headers)
+        if statusCode == 200 then -- Pokud byl soubor na GitHubu nalezen (úspěch)
+            local fxManifest = LoadResourceFile(resourceName, "fxmanifest.lua") -- Načtení lokálního fxmanifest.lua
 
-            if latestVersion ~= currentVersion then
-                print("*********************************************")
-                print(resourceName .. " is outdated!")
-                print("Current version: " .. currentVersion)
-                print("Latest version: " .. latestVersion)
-                print("Please update the script from GitHub.")
-                print("*********************************************")
+            if fxManifest ~= response then -- Porovnání lokálního souboru s verzí na GitHubu
+                local currentVersion = GetResourceMetadata(resourceName, "version") or "N/A"
+                local latestVersion = "N/A" -- Není dostupná verze z GitHubu přes API, použijeme "N/A" jako hodnotu
+
+                print("^5[vxrp_multipack]^1 Resource "..resourceName.." is outdated!") -- Zelený prefix a světle modrý text pro neaktualní resource
+                print("^5Current version: ^8 "..currentVersion)
+                print("^5Latest version: ^2 "..latestVersion)
+                print("^6Please update the script from GitHub.")
             else
-                print(resourceName .. " is up to date.")
+                print("^5[vxrp_multipack]^19 Resource "..resourceName.." is up to date.") -- Zelený prefix a světle modrý text pro aktuální resource
             end
         else
-            print("Failed to check for updates. Status Code: " .. statusCode)
+            print("^5[vxrp_multipack]^1 Unable to verify the status of the resource "..resourceName..".") -- Zelený prefix a světle modrý text pro neúspěšnou kontrolu
         end
-    end, "GET", "", {["User-Agent"] = "request"})
+    end, "GET", "", {})
 end
 
-CheckForUpdate()
-setInterval(CheckForUpdate, checkInterval * 1000) -- Spustí kontrolu pravidelně po uplynutí zadaného intervalu
+-- Spustí kontrolu aktualizace po načtení všech resource na serveru
+AddEventHandler("onAllResourcesLoaded", function()
+    CheckResourceUpdates()
+end)
