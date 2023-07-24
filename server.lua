@@ -13,5 +13,5 @@ end)
 
 -- Náš vlastní event, který zavolá tisk zprávy do konzole
 AddEventHandler('onAllResourcesLoaded', function()
-    PrintColoredMessage("VXRP_MULTIPACK", "Server byl úspěšně spuštěn.", "2", "5")
+    PrintColoredMessage("vxrp_multipack", "Server byl úspěšně spuštěn.", "2", "5")
 end)
